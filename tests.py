@@ -1,19 +1,20 @@
 import os
-from functions.get_files_info import get_files_info
+from functions.run_python_file import run_python_file
 
-result = get_files_info("calculator", ".")
-print("Result for current directory:")
-for line in result.split("\n"):
-    print(" " + line)
-result = get_files_info("calculator", "pkg")
-print("Result for 'pkg' directory:")
-for line in result.split("\n"):
-    print(" " + line)
-result = get_files_info("calculator", "/bin")
-print("Result for '/bin' directory:")
-for line in result.split("\n"):
-    print(" " + line)
-result = get_files_info("calculator", "../")
-print("Result for '../' directory:")
-for line in result.split("\n"):
-    print(" " + line)
+result = run_python_file("calculator", "main.py")
+print(result)
+
+result = run_python_file("calculator", "main.py", ["3 + 5"])
+print(result)
+
+result = run_python_file("calculator", "tests.py")
+print(result)
+
+result = run_python_file("calculator", "../main.py")
+print(result)
+
+result = run_python_file("calculator", "nonexistent.py")
+print(result)
+
+result = run_python_file("calculator", "lorem.txt")
+print(result)
