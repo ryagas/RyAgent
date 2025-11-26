@@ -27,6 +27,9 @@ def get_files_info(working_directory, directory="."):
 	except ValueError:
 		return f'Error: Cannot list "{directory}" as it is outside the permitted working directory'
 	
+	if not os.path.exists(full_path):
+		return f'Error: Directory "{directory}" does not exist'
+	
 	if not os.path.isdir(full_path):
 		return f'Error: "{directory}" is not a directory'
 	
