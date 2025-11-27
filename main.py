@@ -59,15 +59,18 @@ All paths you provide should be relative to the working directory. You do not ne
         config=types.GenerateContentConfig(
             tools=[available_functions], system_instruction=system_prompt),
     )
+    for variation in response.candidates:
+        messages.append(variation.content)
+
     if verbose:
         print("User prompt: " + user_prompt)
         print("Prompt tokens: ", response.usage_metadata.prompt_token_count)
         print("Response tokens: ", response.usage_metadata.candidates_token_count)
 
     response_list = []
-    if (response.function_calls != None and len(response.function_calls) > 0):
+    if (response.function_calls is not None and len(response.function_calls) > 0):
         for call in response.function_calls:
-            print (f"Calling function: {call.name}({call.args})")
+            # print (f"Calling function: {call.name}({call.args})")
             function_call_result = call_function(call, verbose)
             if function_call_result.parts[0].function_response.response == None:
                 raise Exception("No response")
@@ -77,6 +80,42 @@ All paths you provide should be relative to the working directory. You do not ne
                 print(f"-> {function_call_result.parts[0].function_response.response["result"]}")
     else:
         print(response.text)
+        return
+
+    for response_content in response_list:
+        messages.append(types.Content(role="user", parts=response_list))
+
+    for attempt in range(0, 20):
+        finished = False
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=messages,
+                config=types.GenerateContentConfig(
+                    tools=[available_functions], system_instruction=system_prompt
+                ),
+            )
+            # Check if response has no function calls
+            if response.function_calls is None and response.text != '':
+                finished = True
+                break
+            # we're not done yet
+            if (response.function_calls is not None and len(response.function_calls) > 0):
+                for call in response.function_calls:
+                    function_call_result = call_function(call, verbose)
+                    if function_call_result.parts[0].function_response.response == None:
+                        raise Exception("No response")
+                    else:
+                        response_list.append(function_call_result.parts[0])
+                    if verbose:
+                        print(f"-> {function_call_result.parts[0].function_response.response["result"]}")
+                messages.append(types.Content(role="user", parts=response_list))
+
+        except Exception as e:
+            print("Error: An error has occured: ", e)
+    
+    # we're done
+    print(response.text)
 
 def call_function(function_call_part, verbose=False):
     func_dict = {
